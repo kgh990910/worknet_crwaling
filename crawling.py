@@ -37,7 +37,7 @@ url = 'https://www.work.go.kr/empInfo/empInfoSrch/list/dtlEmpSrchList.do?careerT
 wb=Workbook()
 ws=wb.active
 ws.title='워크넷 농업단순종사원'
-ws.append(['', '회사명/정보 제공처', '채용공고명/담당업무/지원자격', '근무조건', '등록/마감일', '링크'])
+ws.append(['', '회사명/정보 제공처', '채용공고명', '담당업무', '지원자격', '근무지','급여', '근무 조건', '근무 시간', '채용 D-day', '등록/마감일', '링크'])
 
 # 크롬웹드라이버를 통해 셀레니움 사용
 driver = webdriver.Chrome('./chromdriver')
@@ -65,32 +65,38 @@ for i in range(int(len(list)/5)):
     company=company.split('|')
     name = company[2]
 
-    # 채용공고명와 담당업무, 지원자격등을 추출
+    # 채용공고명와 담당업무, 지원자격, 근무지, 등을 추출
     # 채용공고명은 html 크롤링으로 가져올 수 있지만 담당업무, 지원자격은 js라서 웹드라이버 셀레니움을 사용
     text=str(list[5*i+2].find('div',class_='cp-info-in').get_text( ))
-    text=text.strip()
-    text = text+ ' ' + driver.find_element(By.ID, 'jobContLine'+str(i+1)).text
-    
-    # 근무 조건을 추출
+    text1=text.strip()
+    text2 = driver.find_element(By.ID, 'jobContLine'+str(i+1)).text
+    tmp = list[5*i+2].select('div > p > em')
+    text3= tmp[0].text.strip() + " " + tmp[1].text.strip()
+    text4=tmp[2].text.strip()
     working_conditions = list[5*i+3].select('div > p')
-    working_conditions = ('\n'.join(working_conditions[0].get_text().split()) + ' ' +'\n'.join(working_conditions[1].get_text().split())  
-                        + ' ' +'\n'.join(working_conditions[2].get_text().split()) + ' ' +'\n'.join(working_conditions[3].get_text().split()))
+    
+    # 급여, 근무 조건, 근무 시간 등을 추출 
+   pay = '\n'.join(working_conditions[0].text.split()) +" " +'\n'.join(working_conditions[1].text.split())
+    working_date= '\n '.join(working_conditions[2].text.split())
+    working_time='\n'.join(working_conditions[3].text.split())
 
     # 공고가 올라온 날짜, 마감일시를 가져옴
     date = list[5*i+4].select('div > p')
-    date = '\n'.join(date[0].get_text().split()) + ' ' +'\n'.join(date[1].get_text().split())
+    date1 = '\n'.join(date[0].get_text().split())
+    date2 = '\n'.join(date[1].get_text().split())
 
     # 공고와 연결된 링크를 가져옴
     link='https://www.work.go.kr' + list[5*i+2].select_one('div > div > a')['href']
     
-    data=[i+1, name, text, working_conditions, date, link]
+    # 엑셀 저장을 위해 리스트생성 및 추가
+    data=[i+1, name, text1, text2,text3, text4, pay, working_date, working_time, date1, date2, link]
     ws.append(data)
 
 # 공고의 링크가 단순한 텍스트 이므로 하이퍼링크로 변환하는 과정
 for i in range(2, ws.max_row +1):
-    ws["F" + str(i)].hyperlink = ws["F" + str(i)].value
-    ws['F'+str(i)].value = 'Link'
-    ws["F" + str(i)].style = "Hyperlink"
+    ws["L" + str(i)].hyperlink = ws["L" + str(i)].value
+    ws['L'+str(i)].value = 'Link'
+    ws["L" + str(i)].style = "Hyperlink"
 
 # 엑셀을 보기좋게 디자인 변경하는 과정
 AutoFitColumnSize(ws, margin=5)
@@ -109,10 +115,28 @@ ws['D1'].font = Font(bold=True)
 ws['E1'].border =  Border(top=Side(border_style='medium', color='000000'),
                          bottom=Side(border_style='medium', color='000000'))
 ws['E1'].font = Font(bold=True)
-ws['F1'].border = Border(top=Side(border_style='medium', color='000000'),
-                         right=Side(border_style='medium', color='000000'),
+ws['F1'].border =  Border(top=Side(border_style='medium', color='000000'),
                          bottom=Side(border_style='medium', color='000000'))
 ws['F1'].font = Font(bold=True)
+ws['G1'].border =  Border(top=Side(border_style='medium', color='000000'),
+                         bottom=Side(border_style='medium', color='000000'))
+ws['G1'].font = Font(bold=True)
+ws['H1'].border =  Border(top=Side(border_style='medium', color='000000'),
+                         bottom=Side(border_style='medium', color='000000'))
+ws['H1'].font = Font(bold=True)
+ws['I1'].border =  Border(top=Side(border_style='medium', color='000000'),
+                         bottom=Side(border_style='medium', color='000000'))
+ws['I1'].font = Font(bold=True)
+ws['J1'].border =  Border(top=Side(border_style='medium', color='000000'),
+                         bottom=Side(border_style='medium', color='000000'))
+ws['J1'].font = Font(bold=True)
+ws['K1'].border =  Border(top=Side(border_style='medium', color='000000'),
+                         bottom=Side(border_style='medium', color='000000'))
+ws['K1'].font = Font(bold=True)
+ws['L1'].border = Border(top=Side(border_style='medium', color='000000'),
+                         right=Side(border_style='medium', color='000000'),
+                         bottom=Side(border_style='medium', color='000000'))
+ws['L1'].font = Font(bold=True)
 
 # 엑셀로 저장
 wb.save(str(datetime.datetime.now().date())+'.xlsx')
